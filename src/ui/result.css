@@ -1,0 +1,109 @@
+/* 경주 결과 팝업 (라이트 e스포츠 톤: 화이트 + 레드 + 골드). 공통 디자인 시스템(design.css, theme 변수) 위에서 화면 전용 레이아웃만 정의한다. */
+.result-overlay {
+  --fit: 1;
+  position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .92), rgba(217, 222, 230, .94) 72%);
+  font-family: var(--font-body); animation: result-fade .35s ease-out both;
+}
+.result-fit { transform: scale(var(--fit)); transform-origin: 50% 50%; }
+.result-popup {
+  position: relative; width: 880px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  animation: popup-bounce .85s both; /* 아래에서 튀어 오르듯 등장 */
+}
+
+/* ---- WINNER 리본: 레드 + 골드 ---- */
+.result-banner { padding: 4px 96px 10px; z-index: 5; animation: ribbon-in .5s .55s cubic-bezier(.2, 1.3, .4, 1) both; }
+.result-banner .ui-title { font-size: 84px; letter-spacing: .1em; color: var(--c-white); }
+
+/* ---- 시상대 ---- */
+.podium { position: relative; display: flex; align-items: flex-end; justify-content: center; gap: 14px; height: 470px; margin-top: -4px; width: 100%; }
+.podium-slot { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 250px; }
+.podium-slot.rank-1 { order: 2; width: 290px; }
+.podium-slot.rank-2 { order: 1; }
+.podium-slot.rank-3 { order: 3; }
+
+/* 1등 뒤 회전 광선 (골드 빛줄기) */
+.spotlight {
+  position: absolute; z-index: 1; left: 50%; top: 150px; width: 900px; height: 900px; margin: -450px 0 0 -450px; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(212, 165, 42, .38) 0 3deg, rgba(212, 165, 42, 0) 3deg 15deg);
+  -webkit-mask-image: radial-gradient(circle, #000 10%, transparent 66%); mask-image: radial-gradient(circle, #000 10%, transparent 66%);
+  animation: spot-spin 18s linear infinite, spot-in .8s .6s both;
+}
+
+/* 캐릭터: 제자리에서 통통 달리는 모습 + 1등 왕관 */
+.podium-horse {
+  position: relative; width: 150px; height: 150px; margin-bottom: -6px; transform-origin: 50% 100%; z-index: 3;
+  animation: horse-drop .55s cubic-bezier(.2, 1.4, .4, 1) both, horse-bounce .46s ease-in-out infinite alternate;
+  animation-delay: calc(0.7s + var(--bd) * -1), calc(1.3s + var(--bd));
+}
+.rank-1 .podium-horse { width: 210px; height: 210px; animation-delay: 0.9s, 1.5s; }
+.rank-2 .podium-horse { animation-delay: 0.75s, 1.35s; }
+.rank-3 .podium-horse { animation-delay: 0.6s, 1.2s; }
+.podium-horse img { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 6px 4px rgba(29, 34, 43, .35)); }
+.podium-horse .placeholder {
+  width: 100%; height: 66%; margin-top: 34%; display: flex; align-items: center; justify-content: center; border-radius: 3px;
+  border: 3px solid var(--c-white); border-color: var(--c-white); box-shadow: 0 0 0 1px rgba(29, 34, 43, .4), 0 6px 0 rgba(29, 34, 43, .25); box-sizing: border-box;
+}
+.crown { position: absolute; left: 50%; top: -40px; width: 84px; margin-left: -42px; z-index: 4; filter: drop-shadow(0 4px 3px rgba(29, 34, 43, .45)); animation: crown-bob 1.1s ease-in-out infinite alternate, crown-in .5s 1.5s cubic-bezier(.2, 1.5, .4, 1) both; }
+.podium-horse.is-ph .crown { top: 46px; }
+
+/* 3단 시상대 블록: 금/은/동 금속 톤. 윗면(밝음) + 앞면(순위 숫자, 이름) */
+.podium-block { position: relative; width: 100%; transform-origin: 50% 100%; animation: block-rise .55s cubic-bezier(.2, 1.2, .4, 1) both; }
+.rank-1 .podium-block { height: 190px; --c: var(--rank-1); --cd: var(--rank-1-deep); animation-delay: .75s; }
+.rank-2 .podium-block { height: 140px; --c: var(--rank-2); --cd: var(--rank-2-deep); animation-delay: .6s; }
+.rank-3 .podium-block { height: 122px; --c: var(--rank-3); --cd: var(--rank-3-deep); animation-delay: .45s; }
+.podium-top {
+  position: absolute; left: 0; right: 0; top: -16px; height: 24px; background: linear-gradient(var(--c), var(--c)); filter: brightness(1.25);
+  transform: perspective(200px) rotateX(55deg); transform-origin: 50% 100%; border: 2px solid var(--c-ink); border-bottom: 0; border-radius: 2px 2px 0 0;
+}
+.podium-front {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 6px; box-sizing: border-box;
+  background: linear-gradient(170deg, var(--c), var(--cd)); border: 2px solid var(--c-ink); border-radius: 2px 2px 0 0; box-shadow: 0 10px 0 rgba(29, 34, 43, .25);
+  overflow: hidden;
+}
+.podium-front::after { /* 앞면에 비스듬히 지나가는 금속 광택 */
+  content: ''; position: absolute; top: 0; bottom: 0; left: -30%; width: 24%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .5), transparent);
+  transform: skewX(-20deg); animation: ui-shine 3.6s ease-in-out infinite;
+}
+.podium-rank { font-family: var(--font-number); font-weight: 700; font-size: 70px; line-height: 1; color: var(--c-white); text-shadow: 3px 3px 0 rgba(13, 17, 24, .55); }
+.rank-1 .podium-rank { font-size: 92px; }
+.podium-name { font-family: var(--font-body); font-weight: 900; font-size: 26px; color: var(--c-ink); line-height: 1.1; }
+.rank-1 .podium-name { font-size: 32px; }
+.podium-lane { font-size: 14px; font-weight: 900; color: var(--c-ink); opacity: .75; }
+.rank-3 .podium-rank { font-size: 54px; }
+
+/* ---- 하단 버튼 ---- */
+.result-buttons { position: relative; z-index: 5; display: flex; align-items: center; justify-content: center; gap: 26px; margin-top: 26px; animation: buttons-in .5s 1.3s cubic-bezier(.2, 1.2, .4, 1) both; }
+
+/* ---- 골드 스파크 (위에서 떨어지는 가는 빛줄기) ---- */
+.confetti { position: absolute; inset: 0; z-index: 20; pointer-events: none; overflow: hidden; }
+.confetti i {
+  position: absolute; top: -90px; left: var(--x); width: 3px; height: var(--len); border-radius: 2px;
+  background: linear-gradient(transparent, var(--c)); box-shadow: 0 0 6px var(--c); transform: rotate(12deg);
+  animation: confetti-fall var(--d) linear var(--delay) infinite;
+}
+
+@keyframes result-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popup-bounce {
+  0% { transform: translateY(110vh) scale(.9); }
+  55% { transform: translateY(-5vh) scale(1.02); }
+  72% { transform: translateY(2vh) scale(.995); }
+  86% { transform: translateY(-.8vh); }
+  100% { transform: translateY(0); }
+}
+@keyframes ribbon-in { from { opacity: 0; transform: skewX(var(--skew)) translateX(-140%); } to { opacity: 1; transform: skewX(var(--skew)) translateX(0); } }
+@keyframes spot-spin { to { transform: rotate(360deg); } }
+@keyframes spot-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes horse-drop { from { opacity: 0; transform: translateY(-260px) scale(.7); } to { opacity: 1; transform: none; } }
+@keyframes horse-bounce {
+  0% { transform: translateY(0) scale(1.07, .93); }
+  100% { transform: translateY(-22px) scale(.95, 1.05); }
+}
+@keyframes crown-bob { from { transform: translateY(0) rotate(-5deg); } to { transform: translateY(-6px) rotate(5deg); } }
+@keyframes crown-in { from { opacity: 0; scale: 0; } to { opacity: 1; scale: 1; } }
+@keyframes block-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes buttons-in { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+@keyframes confetti-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(12deg); opacity: 1; }
+  100% { transform: translate3d(var(--sway), 118vh, 0) rotate(12deg); opacity: .85; }
+}
