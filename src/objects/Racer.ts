@@ -239,6 +239,7 @@ export class Racer {
   /** 현재 모습을 복제해 서서히 사라지는 잔상을 남긴다. */
   spawnAfterimage() {
     const ghost = new HorseView(this.scene, this.view.x, this.view.y, this.horse, 'run');
+    ghost.setRunPhase(this.bobPhase);
     ghost.setAngle(this.view.angle).setScale(this.view.scaleX, this.view.scaleY).setAlpha(0.5).setDepth(-1);
     this.scene.tweens.add({ targets: ghost, alpha: 0, duration: 300, onComplete: () => ghost.destroy() });
   }

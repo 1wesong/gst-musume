@@ -8,6 +8,7 @@ export interface ResultEntry {
   lane: number;
   horse: HorseData;
   useImage: boolean; // 달리기 이미지가 실제로 로드되었는지
+  useImage2?: boolean; // 달리기 2번째 프레임이 실제로 로드되었는지
 }
 
 export interface ResultHandlers {
@@ -99,7 +100,7 @@ export class ResultOverlay {
     // 이미지 경로가 비어 있거나 로드되지 않았으면 말 색상 사각형 + 이름으로 대체
     const visual =
       horse.images.run && e.useImage
-        ? `<img src="${horse.images.run}" alt="" />`
+        ? `<img src="${horse.images.run}" alt="" />${e.useImage2 ? `<img class="run-f2" src="${horse.images.run2}" alt="" />` : ''}`
         : `<div class="placeholder" style="background:${hex(horse.color)}"></div>`;
     return `
       <div class="podium-slot rank-${e.rank}">

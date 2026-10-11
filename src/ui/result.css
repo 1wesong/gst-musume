@@ -40,6 +40,11 @@
 .rank-2 .podium-horse { animation-delay: 0.75s, 1.35s; }
 .rank-3 .podium-horse { animation-delay: 0.6s, 1.2s; }
 .podium-horse img { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 6px 4px rgba(29, 34, 43, .35)); }
+/* 달리기 2프레임: 2번째 이미지를 겹쳐 두고 번갈아 보여 준다 (1번째 이미지가 .46s 주기로 깜빡) */
+.podium-horse img.run-f2 { position: absolute; left: 0; top: 0; animation: run-f2 .46s steps(1, end) infinite; }
+.podium-horse:has(.run-f2) > img:not(.run-f2) { animation: run-f1 .46s steps(1, end) infinite; }
+@keyframes run-f1 { 0% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes run-f2 { 0% { opacity: 0; } 50% { opacity: 1; } }
 .podium-horse .placeholder {
   width: 100%; height: 66%; margin-top: 34%; display: flex; align-items: center; justify-content: center; border-radius: 3px;
   border: 3px solid var(--c-white); border-color: var(--c-white); box-shadow: 0 0 0 1px rgba(29, 34, 43, .4), 0 6px 0 rgba(29, 34, 43, .25); box-sizing: border-box;

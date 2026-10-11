@@ -91,6 +91,7 @@ export const SIM_RACES = 100;
 
 // ---- 달리기 모션 ----
 export const BOB_HEIGHT = 12 * HORSE_SCALE; // 통통 튀는 높이(px)
+export const RUN_FRAME_SWAPS_PER_JUMP = 2; // 한 번 튈 때 달리기 프레임(run/run2)이 바뀌는 횟수
 export const BOB_FREQ = 3.3; // 기준 속도에서 초당 튀는 횟수
 export const TILT_DEG = 5; // 앞뒤 기울기
 export const SQUASH_AMOUNT = 0.18; // 착지 찌그러짐 정도

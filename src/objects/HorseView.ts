@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { HORSE_DISPLAY_SIZE, HORSE_SCALE, PLACEHOLDER_SIZE } from '../config';
+import { HORSE_DISPLAY_SIZE, HORSE_SCALE, PLACEHOLDER_SIZE, RUN_FRAME_SWAPS_PER_JUMP } from '../config';
 import type { HorseData } from '../data/horses';
 
 export type ImageKind = keyof HorseData['images'];
@@ -11,6 +11,9 @@ export const textureKey = (horse: HorseData, kind: ImageKind) => `horse${horse.i
  * 이미지가 로드되어 있으면 이미지, 아니면 말 색상 사각형(+ 이름 텍스트)으로 대체한다.
  */
 export class HorseView extends Phaser.GameObjects.Container {
+  /** 달리기 프레임(run, run2). 2장이 모두 있을 때만 채워진다 */
+  private frames: Phaser.GameObjects.Image[] = [];
+
   /**
    * @param opts.showName 이미지가 없을 때 임시 사각형 안에 이름을 그릴지 (기본 true).
    *        이름 라벨이 따로 있는 화면에서는 false로 해서 이름이 두 번 나오지 않게 한다.
@@ -19,7 +22,14 @@ export class HorseView extends Phaser.GameObjects.Container {
     super(scene, x, y);
     const key = textureKey(horse, kind);
     if (horse.images[kind] && scene.textures.exists(key)) {
-      this.add(scene.add.image(0, -HORSE_DISPLAY_SIZE / 2, key).setDisplaySize(HORSE_DISPLAY_SIZE, HORSE_DISPLAY_SIZE));
+      const img = scene.add.image(0, -HORSE_DISPLAY_SIZE / 2, key).setDisplaySize(HORSE_DISPLAY_SIZE, HORSE_DISPLAY_SIZE);
+      this.add(img);
+      const key2 = textureKey(horse, 'run2');
+      if (kind === 'run' && horse.images.run2 && scene.textures.exists(key2)) {
+        const img2 = scene.add.image(0, -HORSE_DISPLAY_SIZE / 2, key2).setDisplaySize(HORSE_DISPLAY_SIZE, HORSE_DISPLAY_SIZE).setVisible(false);
+        this.add(img2);
+        this.frames = [img, img2];
+      }
     } else {
       const w = PLACEHOLDER_SIZE.w * HORSE_SCALE;
       const h = PLACEHOLDER_SIZE.h * HORSE_SCALE;
@@ -33,5 +43,13 @@ export class HorseView extends Phaser.GameObjects.Container {
       }
     }
     scene.add.existing(this);
+  }
+
+  /** 튀는 위상에 맞춰 달리기 프레임을 번갈아 보여 준다 (프레임이 1장이면 아무것도 하지 않음). */
+  setRunPhase(phase: number) {
+    if (this.frames.length < 2) return;
+    const i = Math.floor((phase * RUN_FRAME_SWAPS_PER_JUMP) / Math.PI) & 1;
+    this.frames[0].setVisible(i === 0);
+    this.frames[1].setVisible(i === 1);
   }
 }

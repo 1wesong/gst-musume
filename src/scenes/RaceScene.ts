@@ -373,6 +373,7 @@ export class RaceScene extends Phaser.Scene {
         lane: r.lane,
         horse: r.horse,
         useImage: this.textures.exists(textureKey(r.horse, 'run')),
+        useImage2: !!r.horse.images.run2 && this.textures.exists(textureKey(r.horse, 'run2')),
       })),
       {
         onReplay: () => void wipeThen(() => this.scene.restart({ horses })), // 같은 8마리, 같은 레인

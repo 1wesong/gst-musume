@@ -15,7 +15,8 @@ export interface HorseData {
   };
   images: {
     stand: string; // 차렷 자세 (레인 소개, 선택 카드)
-    run: string; // 달리는 포즈 (경주, 결과 팝업)
+    run: string; // 달리는 포즈 1 (경주, 결과 팝업)
+    run2: string; // 달리는 포즈 2 (다리 반대 자세). 비어 있으면 run 한 장만 쓴다
     cutin: string; // 필살기 컷인
   };
 }
@@ -31,7 +32,7 @@ export const STYLE_LABEL: Record<RunningStyle, string> = {
 
 const STYLES: RunningStyle[] = ['escape', 'front', 'stalker', 'closer'];
 
-const NO_IMAGES = { stand: '', run: '', cutin: '' };
+const NO_IMAGES = { stand: '', run: '', run2: '', cutin: '' };
 
 const palette = [
   0xe74c3c, 0xe67e22, 0xf1c40f, 0x2ecc71, 0x1abc9c,
