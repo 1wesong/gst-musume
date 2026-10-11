@@ -1,5 +1,5 @@
 import {
-  GAP_ASSIST, LAST_SPURT_AT, RUBBER_BAND, SPEED_TARGET_INTERVAL, SPEED_TARGET_VARIATION, SPURT_SPEED_MUL, SPURT_TARGET_INTERVAL, SPURT_VARIATION, STYLE_CURVES,
+  GAP_ASSIST, HIDDEN_SPURT, LAST_SPURT_AT, LEADER_FATIGUE, SLIPSTREAM, TRACK_LENGTH, RUBBER_BAND, SPEED_TARGET_INTERVAL, SPEED_TARGET_VARIATION, SPURT_SPEED_MUL, SPURT_TARGET_INTERVAL, SPURT_VARIATION, STYLE_CURVES,
   STYLE_STRENGTH, ULTIMATE_RAMP_TIME,
 } from '../config';
 
@@ -56,4 +56,62 @@ export function gapAssistMultiplier(rankIndex: number, count: number, gapFrac: n
   if (strength === 0) return 1;
   const t = rankIndex / (count - 1);
   return 1 + GAP_ASSIST.max * strength * (2 * t - 1);
+}
+
+// ---- 추월이 자연스럽게 자주 일어나게 하는 규칙들 (게임과 시뮬레이션이 공유) ----
+
+/** 슬립스트림 배율. gap: 바로 앞 말과의 거리(px, 앞 말이 없으면 null). 가까울수록 보너스가 크다. */
+export function slipstreamMultiplier(gap: number | null): number {
+  if (gap === null || gap <= 0) return 1;
+  const reach = SLIPSTREAM.distance * TRACK_LENGTH;
+  if (gap >= reach) return 1;
+  return 1 + SLIPSTREAM.max * (1 - gap / reach);
+}
+
+/** 선두 피로(0~1) 갱신: 1위면 쌓이고, 아니면 회복된다. */
+export function stepFatigue(fatigue: number, leading: boolean, dt: number): number {
+  const d = leading ? dt / LEADER_FATIGUE.time : -dt / LEADER_FATIGUE.recover;
+  return Math.min(1, Math.max(0, fatigue + d));
+}
+
+/** 선두 피로에 따른 속도 배율. */
+export const fatigueMultiplier = (fatigue: number): number => 1 - LEADER_FATIGUE.max * fatigue;
+
+/** 말마다 숨겨진 스퍼트 계획. start: 시작 진행률, strength: 최대 가속 비율. */
+export interface SpurtPlan {
+  start: number;
+  strength: number;
+}
+
+export function rollSpurtPlan(): SpurtPlan {
+  const r = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
+  return { start: r(...HIDDEN_SPURT.start), strength: r(...HIDDEN_SPURT.strength) };
+}
+
+/** 숨겨진 스퍼트 배율. progress: 그 말의 진행률(0~1). start 이전은 1, 이후 ramp에 걸쳐 1+strength까지 올라간다. */
+export function hiddenSpurtMultiplier(plan: SpurtPlan, progress: number): number {
+  const t = Math.min(1, Math.max(0, (progress - plan.start) / HIDDEN_SPURT.ramp));
+  return 1 + plan.strength * t * t * (3 - 2 * t);
+}
+
+/** 경주 중인 말들에게 순위 기반 보정을 한꺼번에 적용하기 위한 최소 모양 (Racer, 시뮬레이션 말 공통). */
+export interface FieldRacer {
+  x: number;
+  rubberMul: number;
+  gapMul: number;
+  slipMul: number;
+  leading: boolean;
+}
+
+/**
+ * 추격 보정 + 극단적 격차 보정 + 슬립스트림 + 선두 표시를 적용한다. running은 x 내림차순(선두 먼저)으로 정렬된 경주 중인 말들.
+ */
+export function applyFieldEffects(running: FieldRacer[], spurt: boolean): void {
+  const gapFrac = running.length > 1 ? (running[0].x - running[running.length - 1].x) / TRACK_LENGTH : 0;
+  running.forEach((r, i) => {
+    r.rubberMul = rubberMultiplier(i, running.length, spurt);
+    r.gapMul = gapAssistMultiplier(i, running.length, gapFrac);
+    r.slipMul = slipstreamMultiplier(i === 0 ? null : running[i - 1].x - r.x);
+    r.leading = i === 0;
+  });
 }

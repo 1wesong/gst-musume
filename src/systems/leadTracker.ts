@@ -9,6 +9,11 @@ export class LeadTracker<T> {
 
   constructor(private holdSec: number) {}
 
+  /** 지금 인정된 선두 (아직 없으면 null). */
+  get leader(): T | null {
+    return this.current;
+  }
+
   /** 매 프레임 호출. 교체가 확정된 프레임에만 { from, to }를 반환한다. */
   update(leader: T, dt: number): { from: T; to: T } | null {
     if (this.current === null) {

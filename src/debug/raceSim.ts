@@ -13,7 +13,8 @@ import { pickExcludeTarget, pickSwapPair, rollPenaltyEnabled, rollPenaltyIndex }
 import { mirrorLogical } from '../systems/trackMap';
 import { pickUltimateTargets, rollUltimateCount, rollUltimateTrigger } from '../systems/ultimatePlan';
 import {
-  gapAssistMultiplier, isSpurt, rubberMultiplier, speedTargetInterval, speedVariation, spurtSpeedMul, styleMultiplier, ultimateMultiplier, type RunningStyle,
+  applyFieldEffects, fatigueMultiplier, hiddenSpurtMultiplier, isSpurt, rollSpurtPlan, speedTargetInterval, speedVariation, spurtSpeedMul, stepFatigue, styleMultiplier,
+  ultimateMultiplier, type RunningStyle,
 } from '../systems/speedModel';
 
 const DT = 1 / 60;
@@ -38,6 +39,10 @@ class SimRacer {
   private ultimateElapsed = 0;
   rubberMul = 1;
   gapMul = 1;
+  slipMul = 1;
+  leading = false;
+  private fatigue = 0;
+  private spurtPlan = rollSpurtPlan();
   heavyCooldown = 0;
   private spurt = false;
   private speedVar = 0;
@@ -82,9 +87,10 @@ class SimRacer {
     this.speedVar += (this.speedVarTarget - this.speedVar) * Math.min(1, C.SPEED_TARGET_SMOOTH * dt);
     if (this.ultimateActive) this.ultimateMul = ultimateMultiplier(this.ultimatePeak, this.ultimateElapsed);
     const progress = (this.x - C.START_X) / C.TRACK_LENGTH;
+    this.fatigue = stepFatigue(this.fatigue, this.leading, dt);
     this.speed =
-      C.BASE_SPEED * this.baseSpeed * (1 + this.speedVar) * styleMultiplier(this.style, progress) * this.rubberMul * this.gapMul *
-      spurtSpeedMul(this.spurt) * this.skillSpeedMul * this.ultimateMul;
+      C.BASE_SPEED * this.baseSpeed * (1 + this.speedVar) * styleMultiplier(this.style, progress) * this.rubberMul * this.gapMul * this.slipMul * fatigueMultiplier(this.fatigue) *
+      hiddenSpurtMultiplier(this.spurtPlan, progress) * spurtSpeedMul(this.spurt) * this.skillSpeedMul * this.ultimateMul;
     this.x = Math.max(C.START_X, this.x + this.speed * dt);
     if (this.ultimateActive) {
       this.ultimateTime -= dt;
@@ -112,6 +118,8 @@ export interface RaceResult {
   gap60: number | null; // 선두 진행률이 60%가 되는 시점의 선두-꼴찌 간격(트랙 길이 대비 비율)
   worldLastWins: boolean | null; // "내 세상" 벌칙이 나온 경주에서, 벌칙 직전 꼴찌였던 말이 우승했는지 (그 벌칙이 아니면 null)
   leadChanges: number; // 경주당 1위 교체 횟수 (게임 중계 자막과 같은 기준)
+  rankSwaps: number; // 경주당 전체 순위 변동(추월) 횟수: 1등 골인 전까지 두 말의 앞뒤가 뒤바뀐 횟수
+  winnerLeadAt: number | null; // 최종 우승마가 마지막으로 1위에 올라선 진행률(0~1). "내 세상" 경주는 좌표가 뒤집혀 null
 }
 
 export function simulateRace(): RaceResult {
@@ -139,6 +147,10 @@ export function simulateRace(): RaceResult {
   let firstTime = 0;
   let usedSlowmo = false;
   let leadChanges = 0;
+  let rankSwaps = 0;
+  const pairSign = new Map<string, number>(); // 두 말의 앞뒤 관계(+1: i가 앞)
+  const leadSince = new Map<SimRacer, number>(); // 말이 마지막으로 1위에 올라선 진행률
+  let seenLeader: SimRacer | null = null;
 
   while (finished.length < 3 && gameTime < 200) {
     // 경주 중 최대 간격 (1등 골인 전까지)
@@ -230,11 +242,7 @@ export function simulateRace(): RaceResult {
       spurt = true;
       racers.forEach((r) => r.setSpurt(true));
     }
-    const gapFrac = running.length > 1 ? (running[0].x - running[running.length - 1].x) / C.TRACK_LENGTH : 0;
-    running.forEach((r, i) => {
-      r.rubberMul = rubberMultiplier(i, running.length, spurt);
-      r.gapMul = gapAssistMultiplier(i, running.length, gapFrac);
-    });
+    applyFieldEffects(running, spurt);
 
     for (const r of racers) {
       const prev = r.update(dt);
@@ -254,6 +262,23 @@ export function simulateRace(): RaceResult {
       const lead = racers.reduce((best, r) => (r.x > best.x ? r : best));
       const change = tracker.update(lead, dt);
       if (change && gameTime > C.CAPTION_START_DELAY) leadChanges++;
+      // 우승마가 마지막으로 1위에 올라선 지점: 확정 대기 없이, 앞선 말보다 RANK_SWAP_MIN_GAP 이상 앞서면 1위 교체로 본다
+      if (seenLeader === null || lead.x - seenLeader.x > C.RANK_SWAP_MIN_GAP * C.TRACK_LENGTH) {
+        seenLeader = lead;
+        leadSince.set(lead, (lead.x - C.START_X) / C.TRACK_LENGTH);
+      }
+      // 전체 순위 변동: 두 말의 앞뒤가 RANK_SWAP_MIN_GAP 이상 벌어진 채 뒤바뀌면 1회
+      for (let i = 0; i < racers.length; i++) {
+        for (let j = i + 1; j < racers.length; j++) {
+          const d = (racers[i].x - racers[j].x) / C.TRACK_LENGTH;
+          if (Math.abs(d) < C.RANK_SWAP_MIN_GAP) continue;
+          const key = i * 16 + j;
+          const sign = Math.sign(d);
+          const prevSign = pairSign.get(String(key));
+          if (prevSign !== undefined && prevSign !== sign) rankSwaps++;
+          pairSign.set(String(key), sign);
+        }
+      }
     }
 
     // 필살기 말이 처음 선두로 올라선 시점의 진행률
@@ -278,7 +303,8 @@ export function simulateRace(): RaceResult {
       }
     }
   }
-  return { winnerUlt: ultSet.has(finished[0]), ultCount, triggerRanks, takeoverProgress, realTime, gameTime, firstTime, slowmo: usedSlowmo, penalty: penaltyId, gapMaxRace, gap60, worldLastWins: worldLast ? finished[0] === worldLast : null, leadChanges };
+  return { winnerUlt: ultSet.has(finished[0]), ultCount, triggerRanks, takeoverProgress, realTime, gameTime, firstTime, slowmo: usedSlowmo, penalty: penaltyId, gapMaxRace, gap60, worldLastWins: worldLast ? finished[0] === worldLast : null, leadChanges, rankSwaps,
+    winnerLeadAt: penaltyId === 'world' ? null : leadSince.get(finished[0]) ?? 1 };
 }
 
 export interface SimReport {
@@ -289,6 +315,9 @@ export interface SimReport {
   avgLeadChanges: number;
   leadChangesDist: Record<string, number>; // 1위 교체 횟수별 경주 비율(%)
   slowmoRate: number;
+  avgRankSwaps: number; // 경주당 전체 순위 변동 횟수(평균)
+  winnerLeadAtAvg: number; // 최종 우승마가 마지막으로 1위에 올라선 진행률 평균(%)
+  lateTakeoverRate: number; // 우승마가 진행률 90% 이후에 1위로 올라선 경주 비율(%)
   penaltyStats: { id: PenaltyId | 'none'; name: string; count: number; rate: number; avgRealTime: number }[]; // 벌칙별 발생 횟수와 평균 경주 시간
   gapAvg: number; // 진행률 60% 시점 선두-꼴찌 평균 간격(트랙 길이 대비 %)
   gapP95: number;
@@ -332,6 +361,11 @@ export function runSimulations(n: number): SimReport {
     avgLeadChanges: avg(rs.map((r) => r.leadChanges)),
     leadChangesDist: dist,
     slowmoRate: pct(rs.map((r) => r.slowmo)),
+    avgRankSwaps: avg(rs.map((r) => r.rankSwaps)),
+    ...(() => {
+      const w = rs.map((r) => r.winnerLeadAt).filter((x): x is number => x !== null);
+      return { winnerLeadAtAvg: avg(w) * 100, lateTakeoverRate: pct(w.map((x) => x >= 0.9)) };
+    })(),
     penaltyStats: [
       ...PENALTIES.map((d) => {
         const sub = rs.filter((r) => r.penalty === d.id);
@@ -378,7 +412,10 @@ export function printReport(r: SimReport, log: (...a: unknown[]) => void = conso
     { 항목: '평균 경주 시간 - 전체 (참고)', 결과: `${r.avgRealTime.toFixed(1)}초`, 목표: '-', 판정: '' },
     { 항목: '평균 게임 시간(컷인·슬로모션 제외)', 결과: `${r.avgGameTime.toFixed(1)}초`, 목표: '-', 판정: '' },
     { 항목: '1등 골인 시각', 결과: `${r.avgFirstTime.toFixed(1)}초`, 목표: '-', 판정: '' },
-    { 항목: '경주당 1위 교체 횟수(평균)', 결과: r.avgLeadChanges.toFixed(2), 목표: '3~5회', 판정: mark(r.avgLeadChanges >= 3 && r.avgLeadChanges <= 5) },
+    { 항목: '경주당 1위 교체 횟수(평균)', 결과: r.avgLeadChanges.toFixed(2), 목표: '5회 이상', 판정: mark(r.avgLeadChanges >= 5) },
+    { 항목: '경주당 전체 순위 변동 횟수(평균)', 결과: r.avgRankSwaps.toFixed(1), 목표: '-', 판정: '' },
+    { 항목: '우승마가 마지막으로 1위에 올라선 진행률(평균)', 결과: `${r.winnerLeadAtAvg.toFixed(1)}%`, 목표: '85% 이상', 판정: mark(r.winnerLeadAtAvg >= 85) },
+    { 항목: '우승마가 90% 이후 1위로 올라선 경주 비율', 결과: `${r.lateTakeoverRate.toFixed(1)}%`, 목표: '-', 판정: '' },
     { 항목: '슬로모션 발생률', 결과: `${r.slowmoRate.toFixed(1)}%`, 목표: '-', 판정: '' },
   ]);
   table([

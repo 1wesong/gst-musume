@@ -12,7 +12,7 @@ import { Racer } from '../objects/Racer';
 import { SpeedLines } from '../objects/SpeedLines';
 import { resetBgmRate, setBgmRate } from '../systems/bgm';
 import { PenaltySystem } from '../systems/PenaltySystem';
-import { gapAssistMultiplier, isSpurt, rubberMultiplier } from '../systems/speedModel';
+import { applyFieldEffects, isSpurt } from '../systems/speedModel';
 import { mirrorLogical, TrackMap } from '../systems/trackMap';
 import { SkillSystem } from '../systems/SkillSystem';
 import { UltimateSystem } from '../systems/UltimateSystem';
@@ -273,16 +273,14 @@ export class RaceScene extends Phaser.Scene {
   /** 추격 보정: 초중반엔 강하게(한 무리로 뭉침), 스퍼트에서는 꺼서 역전이 잦아지게 한다. */
   private updateRubberBand() {
     const running = this.racers.filter((r) => r.rank === null).sort((a, b) => b.x - a.x);
-    // 선두-꼴찌 간격이 기준(GAP_ASSIST.limit)을 넘을 때만 약한 속도 보정이 추가된다
-    const gapFrac = running.length > 1 ? (running[0].x - running[running.length - 1].x) / TRACK_LENGTH : 0;
-    running.forEach((r, i) => {
-      r.rubberMul = rubberMultiplier(i, running.length, this.spurtOn);
-      r.gapMul = gapAssistMultiplier(i, running.length, gapFrac);
-    });
+    // 추격 보정 + (간격이 기준을 넘을 때만) 격차 보정 + 슬립스트림 + 선두 표시
+    applyFieldEffects(running, this.spurtOn);
     for (const r of this.racers) {
       if (r.rank !== null) {
         r.rubberMul = 1;
         r.gapMul = 1;
+        r.slipMul = 1;
+        r.leading = false;
       }
     }
   }

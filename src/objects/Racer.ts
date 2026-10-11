@@ -4,7 +4,7 @@ import {
 } from '../config';
 import type { HorseData } from '../data/horses';
 import type { SkillDef } from '../data/skills';
-import { speedTargetInterval, speedVariation, spurtSpeedMul, styleMultiplier, ultimateMultiplier } from '../systems/speedModel';
+import { fatigueMultiplier, hiddenSpurtMultiplier, rollSpurtPlan, speedTargetInterval, speedVariation, spurtSpeedMul, stepFatigue, styleMultiplier, ultimateMultiplier } from '../systems/speedModel';
 import type { TrackMap } from '../systems/trackMap';
 import { applyBob } from './bob';
 import type { DustFx } from './DustFx';
@@ -36,6 +36,10 @@ export class Racer {
   // 필살기 속도 강화 상태
   rubberMul = 1; // 추격 보정(RaceScene이 순위에 따라 갱신)
   gapMul = 1; // 극단적 격차 보정(선두-꼴찌 간격이 기준을 넘을 때만 1이 아니다)
+  slipMul = 1; // 슬립스트림(바로 앞 말을 바짝 따라갈 때)
+  leading = false; // 지금 1위인지 (선두 피로 계산용)
+  private fatigue = 0; // 선두 피로(0~1)
+  private spurtPlan = rollSpurtPlan(); // 숨겨진 라스트 스퍼트 시작 지점/강도
   heavyCooldown = 0; // 이 시간(초)이 지나기 전에는 넘어짐/역주행 같은 heavy 스킬이 다시 걸리지 않는다
   private spurt = false; // 라스트 스퍼트 구간인지
   ultimateMul = 1;
@@ -114,9 +118,10 @@ export class Racer {
 
     if (this.ultimateActive) this.ultimateMul = ultimateMultiplier(this.ultimatePeak, this.ultimateElapsed);
     const progress = (this.x - START_X) / TRACK_LENGTH;
+    this.fatigue = stepFatigue(this.fatigue, this.leading, dt);
     this.speed =
       BASE_SPEED * this.horse.baseSpeed * (1 + this.speedVar) * styleMultiplier(this.horse.style, progress) *
-      this.rubberMul * this.gapMul * spurtSpeedMul(this.spurt) * this.skillSpeedMul * this.ultimateMul;
+      this.rubberMul * this.gapMul * this.slipMul * fatigueMultiplier(this.fatigue) * hiddenSpurtMultiplier(this.spurtPlan, progress) * spurtSpeedMul(this.spurt) * this.skillSpeedMul * this.ultimateMul;
     this.x = Math.max(START_X, this.x + this.speed * dt);
 
     // 튀는 속도는 현재 속도에 비례. |sin| 한 주기가 한 번의 점프

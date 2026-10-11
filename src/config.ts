@@ -49,8 +49,8 @@ export const TARGET_RACE_SECONDS = 24.6; // 기준 속도로 트랙을 달리는
 export const BASE_SPEED = (FINISH_X - START_X) / TARGET_RACE_SECONDS; // px/s
 // 목표 속도: 말마다 일정 주기로 새로 뽑고, 현재 속도가 부드럽게 따라간다(가속/감속)
 export const SPEED_TARGET_VARIATION = 0.17; // 목표 속도 배율의 변동 폭(±)
-export const SPEED_TARGET_INTERVAL = [1, 2] as const; // 목표 속도를 새로 뽑는 주기(초)
-export const SPEED_TARGET_SMOOTH = 1.8; // 목표 속도 추종 속도(클수록 빨리 가속/감속)
+export const SPEED_TARGET_INTERVAL = [0.7, 1.2] as const; // 목표 속도를 새로 뽑는 주기(초)
+export const SPEED_TARGET_SMOOTH = 2.6; // 목표 속도 추종 속도(클수록 빨리 가속/감속)
 
 // 각질(주행 성향): 경주 진행률(0~1)에 따른 속도 배율 곡선. 값 5개는 진행률 0, 25, 50, 75, 100%의 배율
 export const STYLE_STRENGTH = 1.2; // 각질 효과 전체 강도(0이면 끔, 1이 기준)
@@ -68,13 +68,23 @@ export const STYLE_MAX_PER_RACE = 3; // 랜덤 선택 시 같은 각질 최대 �
 export const GAP_ASSIST = { limit: 0.25, range: 0.1, max: 0.06 } as const;
 
 // 추격 보정(선두는 감속, 하위권은 가속). 초중반엔 강하게 해서 한 무리로 뭉치게 하고, 라스트 스퍼트에서는 끈다
-export const RUBBER_BAND = { pack: 0.07, spurt: 0 } as const; // 선두 -값 ~ 꼴찌 +값
+export const RUBBER_BAND = { pack: 0.07, spurt: 0.035 } as const; // 선두 -값 ~ 꼴찌 +값
 
 // 라스트 스퍼트: 선두가 이 진행률에 닿으면 전체가 스퍼트 구간에 들어간다 (추격 보정 off, 속도와 변동 폭 증가)
 export const LAST_SPURT_AT = 0.7;
 export const SPURT_SPEED_MUL = 1.08; // 스퍼트 구간 전체 속도 배율
-export const SPURT_VARIATION = 0.27; // 스퍼트 구간 목표 속도 변동 폭(±). 클수록 역전이 잦다
-export const SPURT_TARGET_INTERVAL = [0.7, 1.4] as const; // 스퍼트 구간 목표 속도 갱신 주기(초)
+export const SPURT_VARIATION = 0.2; // 스퍼트 구간 목표 속도 변동 폭(±). 클수록 역전이 잦다
+export const SPURT_TARGET_INTERVAL = [0.6, 1.1] as const; // 스퍼트 구간 목표 속도 갱신 주기(초)
+
+// 슬립스트림: 바로 앞 말(distance 이내, 트랙 길이 대비)을 바짝 따라가는 말은 속도 보너스(max). 가까울수록 커진다
+export const SLIPSTREAM = { distance: 0.045, max: 0.05 } as const;
+
+// 선두 피로: 1위를 유지하는 동안 time초에 걸쳐 속도가 최대 max만큼 서서히 떨어지고, 1위를 내주면 recover초에 걸쳐 회복한다
+export const LEADER_FATIGUE = { time: 4, max: 0.055, recover: 3 } as const;
+
+// 라스트 스퍼트 랜덤화: 말마다 숨겨진 스퍼트 시작 진행률(start)과 강도(strength)를 경주 시작 때 뽑는다.
+// 시작 지점부터 ramp(진행률 폭)에 걸쳐 속도 배율이 1 → 1+strength로 올라간다. 일찍/늦게 폭발하는 말이 섞인다
+export const HIDDEN_SPURT = { start: [0.9, 0.99], strength: [-0.02, 0.36], ramp: 0.025 } as const;
 export const BGM_SPURT_RATE = 1.08; // 스퍼트 구간 BGM 재생 속도 (1이 원래 속도)
 
 // 선두 교체 집계 기준 (경주 중 상단 자막은 표시하지 않고, 디버그 시뮬레이션의 "1위 교체 횟수" 지표에만 쓴다)
@@ -85,6 +95,8 @@ export const CAMERA_PACK_COUNT = 3; // 카메라가 따라가는 선두권 마�
 export const CAMERA_FINISH_REMAINING = 0.05;
 export const CAMERA_FINISH_VIEW = 0.72; // 이때 결승선을 화면의 이 위치(진행 방향 기준, 0~1)에 둔다. 선두는 그보다 앞쪽에 보인다
 export const CAMERA_EDGE_MARGIN = 170; // 선두권 1위/마지막 말이 화면 가장자리에서 최소 이 거리(px) 안쪽에 있게 한다
+
+export const RANK_SWAP_MIN_GAP = 0.004; // 시뮬레이션 "순위 변동" 집계: 두 말이 트랙 길이 대비 이 간격 이상 벌어진 뒤 순서가 바뀌어야 인정 (떨림 방지)
 
 // 디버그 시뮬레이션 (개발 서버에서 ?debug=sim 으로 접속하면 화면 없이 실행하고 콘솔에 출력)
 export const SIM_RACES = 100;
@@ -127,7 +139,7 @@ export const ULTIMATE_COUNT_WEIGHTS = [0.3, 0.5, 0.2] as const;
 export const ULTIMATE_TRIGGER = [0.63, 0.74] as const;
 // 판정 시점에 남은 말 중 하위 이 비율(0.5면 8마리 중 5~8위, 7마리면 5~7위) 안에서 정해진 수만큼 랜덤으로 필살기가 발동한다 (하위권 역전)
 export const ULTIMATE_BOTTOM_FRACTION = 0.5;
-export const ULTIMATE_SPEED_MUL = 2.5; // 필살기 최대 속도 배율. 말별로 horses.ts에서 덮어쓸 수 있다 (기본은 모두 같은 조건)
+export const ULTIMATE_SPEED_MUL = 2.05; // 필살기 최대 속도 배율. 말별로 horses.ts에서 덮어쓸 수 있다 (기본은 모두 같은 조건)
 export const ULTIMATE_DURATION = 12; // 속도 강화 지속 시간(초)
 export const ULTIMATE_RAMP_TIME = 8; // 속도 배율이 1 → 최대치까지 서서히 올라가는 시간(초). 길수록 초반엔 천천히 따라붙고 뒤로 갈수록 빨라진다
 export const ULTIMATE_TARGET_WIN_RATE = 70; // 목표: 필살기가 발동한 경주에서 필살기 말이 우승할 확률(%). 디버그 시뮬레이션 판정용
