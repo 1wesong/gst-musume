@@ -1,0 +1,244 @@
+{
+  "horses": [
+    {
+      "name": "감스트",
+      "stumbleName": "감창",
+      "color": "#e74c3c",
+      "style": "escape",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기1"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "로기다",
+      "stumbleName": "로창",
+      "color": "#e67e22",
+      "style": "front",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기2"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "홍타쿠",
+      "stumbleName": "홍창",
+      "color": "#f1c40f",
+      "style": "stalker",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기3"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "박재박",
+      "stumbleName": "털창",
+      "color": "#2ecc71",
+      "style": "closer",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기4"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "황원태",
+      "stumbleName": "습창",
+      "color": "#1abc9c",
+      "style": "escape",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기5"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "카라미",
+      "stumbleName": "카창",
+      "color": "#3498db",
+      "style": "front",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기6"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "용형",
+      "stumbleName": "용창",
+      "color": "#9b59b6",
+      "style": "stalker",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기7"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "조경훈",
+      "stumbleName": "썩창",
+      "color": "#e84393",
+      "style": "closer",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기8"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "꾸티뉴",
+      "stumbleName": "꾸창",
+      "color": "#95a5a6",
+      "style": "escape",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기9"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "뿌꾸",
+      "stumbleName": "뿌창",
+      "color": "#8d6e63",
+      "style": "front",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기10"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "추멘",
+      "stumbleName": "추창",
+      "color": "#00b894",
+      "style": "stalker",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기11"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "아뚱",
+      "stumbleName": "뚱창",
+      "color": "#0984e3",
+      "style": "closer",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기12"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "세글자",
+      "stumbleName": "세창",
+      "color": "#fd79a8",
+      "style": "escape",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기13"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "지피티",
+      "stumbleName": "지창",
+      "color": "#6c5ce7",
+      "style": "front",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기14"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    },
+    {
+      "name": "울큰고",
+      "stumbleName": "울창",
+      "color": "#fab1a0",
+      "style": "stalker",
+      "baseSpeed": 1,
+      "ultimate": {
+        "name": "필살기15"
+      },
+      "images": {
+        "stand": "",
+        "run": "",
+        "run2": "",
+        "cutin": ""
+      }
+    }
+  ]
+}
