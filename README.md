@@ -32,7 +32,8 @@ npm run preview    # 빌드 결과 미리보기
 | 경로 | 설명 |
 | --- | --- |
 | `src/config.ts` | 속도, 스킬 확률, 필살기 배율 등 밸런스 수치 |
-| `src/data/horses.ts` | 말 15마리 데이터 |
+| `public/data/horses.json` | 말 데이터(이름, 각질, 색, 필살기, 이미지 경로). 말 추가/수정은 이 파일만 고치면 됩니다 |
+| `src/data/horses.ts`, `horseParser.ts` | horses.json 로딩과 검증 |
 | `src/data/penalties.ts` | 벌칙 슬롯 데이터 |
 | `src/data/background.ts` | 배경/메인 화면 에셋 경로 |
 | `src/systems/` | 필살기, 벌칙, 트랙 좌표 변환 등 경주 로직 |
@@ -43,7 +44,7 @@ npm run preview    # 빌드 결과 미리보기
 ## 에셋
 
 이미지가 없거나 로드되지 않으면 말 색상의 사각형 + 이름 텍스트로 대체됩니다.
-이미지와 BGM은 `public/assets/`에 두고 경로를 `src/data/horses.ts`, `src/data/background.ts`에 지정합니다.
+이미지와 BGM은 `public/assets/`에 두고 경로를 `public/data/horses.json`(말), `src/data/background.ts`(배경)에 지정합니다.
 Vite `base`가 `./`이므로 GitHub Pages 하위 경로에서도 경로가 깨지지 않습니다.
 
 ## 밸런스 시뮬레이션

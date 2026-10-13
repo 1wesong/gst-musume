@@ -1,10 +1,11 @@
-import { HORSE_RACE_COUNT, STYLE_MAX_PER_RACE, ULTIMATE_SPEED_MUL } from '../config';
+import { HORSE_RACE_COUNT, STYLE_MAX_PER_RACE } from '../config';
 import type { RunningStyle } from '../systems/speedModel';
+import { parseHorses } from './horseParser';
 
 export interface HorseData {
-  id: number;
+  id: number; // horses.json 안의 순서(1부터). 텍스처 키에 쓰인다
   name: string;
-  /** 넘어짐/역주행 때 말 위에 뜨는 이름. 기본은 이름 첫 글자 + "창", 예외는 STUMBLE_OVERRIDES */
+  /** 넘어짐/역주행 때 말 위에 뜨는 이름. horses.json에서 생략하면 이름 첫 글자 + "창" */
   stumbleName: string;
   color: number; // 임시 사각형 색상
   baseSpeed: number; // 개성용, 차이는 아주 작게
@@ -21,8 +22,6 @@ export interface HorseData {
   };
 }
 
-// 이미지 경로가 빈 문자열이면 임시 도형으로 대체된다.
-// 실제 이미지 적용 시 'assets/horses/01_stand.png' 형태(public/ 기준 상대경로)로 채운다.
 export const STYLE_LABEL: Record<RunningStyle, string> = {
   escape: '도주',
   front: '선행',
@@ -30,32 +29,25 @@ export const STYLE_LABEL: Record<RunningStyle, string> = {
   closer: '추입',
 };
 
-const STYLES: RunningStyle[] = ['escape', 'front', 'stalker', 'closer'];
+/**
+ * 전체 말 목록. 데이터는 public/data/horses.json 에 있고, 게임 시작 때 loadHorses()가 채운다.
+ * 이미지 경로가 빈 문자열이면 임시 도형으로 대체된다. 파일을 읽은 뒤에는 같은 배열을 그대로 쓰므로 import만 해도 된다.
+ */
+export const HORSES: HorseData[] = [];
 
-const NO_IMAGES = { stand: '', run: '', run2: '', cutin: '' };
+export function setHorses(horses: HorseData[]) {
+  HORSES.length = 0;
+  HORSES.push(...horses);
+}
 
-const palette = [
-  0xe74c3c, 0xe67e22, 0xf1c40f, 0x2ecc71, 0x1abc9c,
-  0x3498db, 0x9b59b6, 0xe84393, 0x95a5a6, 0x8d6e63,
-  0x00b894, 0x0984e3, 0xfd79a8, 0x6c5ce7, 0xfab1a0,
-];
-
-const NAMES = ['감스트', '로기다', '홍타쿠', '박재박', '황원태', '카라미', '용형', '조경훈', '꾸티뉴', '뿌꾸', '추멘', '아뚱', '세글자', '지피티', '울큰고'];
-
-// 넘어짐/역주행 표시 이름 예외 (말 id → 이름). 나머지는 첫 글자 + "창"
-const STUMBLE_OVERRIDES: Record<number, string> = { 4: '털창', 5: '습창', 8: '썩창', 12: '뚱창' };
-
-// 필살기 이름은 임시 값. 추후 교체.
-export const HORSES: HorseData[] = palette.map((color, i) => ({
-  id: i + 1,
-  name: NAMES[i],
-  stumbleName: STUMBLE_OVERRIDES[i + 1] ?? `${NAMES[i][0]}창`,
-  color,
-  baseSpeed: 1.0,
-  style: STYLES[i % STYLES.length], // 임시: 순환 배정. 실제 말 데이터 확정 후 개별 지정
-  ultimate: { name: `필살기${i + 1}`, speedMul: ULTIMATE_SPEED_MUL },
-  images: { ...NO_IMAGES },
-}));
+/** public/data/horses.json 을 읽어 HORSES를 채운다 (브라우저). 잘못된 항목은 콘솔 경고, 파일이 쓸 수 없으면 예외. */
+export async function loadHorses(url = `${import.meta.env.BASE_URL}data/horses.json`) {
+  const res = await fetch(url, { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`${url} 를 읽지 못했습니다 (HTTP ${res.status})`);
+  const { horses, warnings } = parseHorses(await res.json());
+  for (const w of warnings) console.warn('[horses.json]', w);
+  setHorses(horses);
+}
 
 /**
  * 랜덤 모드용: 15마리를 셔플해 8마리를 뽑되, 같은 각질이 STYLE_MAX_PER_RACE마리를 넘지 않게 한다.
