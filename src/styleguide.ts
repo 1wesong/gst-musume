@@ -2,6 +2,7 @@
 import Phaser from 'phaser';
 import { createBanner, createButton, createCaptionBar, createPanel, createTitle, slideIn } from './ui/components';
 import { addBanner, addCaptionBar, addSkewPanel, addTitle, UiButton } from './ui/phaserUi';
+import uiChars from 'virtual:ui-chars';
 import { applyThemeCss, loadThemeFonts, theme } from './ui/theme';
 import { wipeThen } from './ui/transition';
 import './ui/design.css';
@@ -73,7 +74,7 @@ class GuideScene extends Phaser.Scene {
   }
 }
 
-void loadThemeFonts().then(() => {
+void loadThemeFonts(uiChars).then(() => {
   buildHtml();
   new Phaser.Game({ type: Phaser.AUTO, parent: 'phaser', width: 900, height: 340, backgroundColor: '#eceff3', scene: [GuideScene] });
 });
