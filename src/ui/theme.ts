@@ -43,7 +43,7 @@ export const theme = {
     number: '"Oswald", "Black Han Sans", sans-serif',
   },
   // Google Fonts 로드에 쓰는 정의 (index.html의 link와 맞춘다)
-  fontFaces: ['32px "Black Han Sans"', '700 20px "Noto Sans KR"', '400 16px "Noto Sans KR"', '700 32px "Oswald"'],
+  fontFaces: ['32px "Black Han Sans"', '400 16px "Noto Sans KR"', '700 20px "Noto Sans KR"', '900 20px "Noto Sans KR"', '700 32px "Oswald"'],
   /** 이보다 작은 제목 글자는 Black Han Sans 대신 본문 폰트(굵게)를 쓴다 — 획이 촘촘한 글자(건, 잖, 뛰 등)가 작은 크기에서 뭉개지기 때문 */
   titleMinPx: 36,
   fontSize: { xs: 14, sm: 16, md: 20, lg: 28, xl: 44, xxl: 72, hero: 104 },
@@ -145,10 +145,15 @@ export function applyThemeCss(root: HTMLElement = document.documentElement) {
   }
 }
 
-/** 웹폰트가 준비될 때까지 기다린다. Phaser 텍스트는 폰트가 로드된 뒤에 만들어야 올바르게 그려진다. */
-export async function loadThemeFonts(): Promise<void> {
+/**
+ * 웹폰트가 준비될 때까지 기다린다. Phaser 텍스트는 폰트가 로드된 뒤에 만들어야 올바르게 그려진다.
+ * 구글 폰트는 한글을 글자 범위별 조각으로 나눠 내려주므로, 화면에 쓰일 글자(extraText)를 넘겨야 그 글자가 든 조각까지 미리 받는다.
+ * 안 그러면 처음 그리는 순간 일부 글자가 대체 폰트(굵기가 다름)로 나오고, 한 번 그린 Phaser 텍스트는 다시 그려지지 않는다.
+ */
+export async function loadThemeFonts(extraText = ''): Promise<void> {
+  const text = `감컴무스메 ABC 123${extraText}`;
   try {
-    await Promise.all(theme.fontFaces.map((f) => document.fonts.load(f, '감컴무스메 ABC 123')));
+    await Promise.all(theme.fontFaces.map((f) => document.fonts.load(f, text)));
   } catch {
     // 오프라인 등: 대체 폰트로 진행
   }

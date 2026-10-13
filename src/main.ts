@@ -5,7 +5,8 @@ import { MainScene } from './scenes/MainScene';
 import { SelectScene } from './scenes/SelectScene';
 import { IntroScene } from './scenes/IntroScene';
 import { RaceScene } from './scenes/RaceScene';
-import { loadHorses } from './data/horses';
+import uiChars from 'virtual:ui-chars';
+import { HORSES, loadHorses } from './data/horses';
 import { applyThemeCss, loadThemeFonts } from './ui/theme';
 import './ui/design.css';
 
@@ -19,8 +20,10 @@ if (import.meta.env.DEV && params.get('debug') === 'sim') {
 } else {
   applyThemeCss();
 
-  // 웹폰트와 말 데이터(public/data/horses.json)가 준비된 뒤에 게임을 시작해야 한다
-  void Promise.all([loadThemeFonts(), loadHorses()]).then(() => {
+  // 말 데이터(public/data/horses.json)와 웹폰트가 준비된 뒤에 게임을 시작해야 한다.
+  // 폰트는 소스에 쓰인 글자 + horses.json의 이름들까지 미리 받아야 일부 글자가 대체 폰트로 그려지지 않는다.
+  const horseText = () => HORSES.map((h) => h.name + h.stumbleName + h.ultimate.name).join('');
+  void loadHorses().then(() => loadThemeFonts(uiChars + horseText())).then(() => {
     new Phaser.Game({
       type: Phaser.AUTO,
       parent: 'game',
