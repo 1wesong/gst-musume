@@ -1,6 +1,7 @@
 import { HORSE_RACE_COUNT } from '../config';
 import { HORSES, pickRaceHorses, type HorseData } from '../data/horses';
 import { createButton, createPanel, createSegmented, createTitle, setButtonLabel, slideIn } from './components';
+import { fitStage } from './fitStage';
 import { hex } from './theme';
 import './select.css';
 
@@ -28,6 +29,7 @@ export class SelectOverlay {
   private hint: HTMLDivElement;
   private grid: HTMLDivElement;
   private seg: ReturnType<typeof createSegmented>;
+  private unfit: () => void = () => {};
 
   constructor(private handlers: SelectHandlers) {
     this.root.className = 'select-overlay';
@@ -99,6 +101,7 @@ export class SelectOverlay {
     this.reshuffle(false);
     this.render();
     document.body.append(this.root);
+    this.unfit = fitStage(this.root); // 창 크기에 맞춰 캔버스처럼 통째로 확대/축소
   }
 
   private get lineup(): HorseData[] {
@@ -193,6 +196,7 @@ export class SelectOverlay {
   }
 
   destroy() {
+    this.unfit();
     this.root.remove();
   }
 }
